@@ -3,262 +3,215 @@
 
 #include <inc/types.h>
 
-static inline void
-breakpoint(void)
+static inline void breakpoint(void) { asm volatile("int3"); }
+
+static inline uint8_t inb(int port)
 {
-	asm volatile("int3");
+    uint8_t data;
+    asm volatile("inb %w1,%0" : "=a"(data) : "d"(port));
+    return data;
 }
 
-static inline uint8_t
-inb(int port)
+static inline void insb(int port, void *addr, int cnt)
 {
-	uint8_t data;
-	asm volatile("inb %w1,%0" : "=a" (data) : "d" (port));
-	return data;
+    asm volatile("cld\n\trepne\n\tinsb"
+                 : "=D"(addr), "=c"(cnt)
+                 : "d"(port), "0"(addr), "1"(cnt)
+                 : "memory", "cc");
 }
 
-static inline void
-insb(int port, void *addr, int cnt)
+static inline uint16_t inw(int port)
 {
-	asm volatile("cld\n\trepne\n\tinsb"
-		     : "=D" (addr), "=c" (cnt)
-		     : "d" (port), "0" (addr), "1" (cnt)
-		     : "memory", "cc");
+    uint16_t data;
+    asm volatile("inw %w1,%0" : "=a"(data) : "d"(port));
+    return data;
 }
 
-static inline uint16_t
-inw(int port)
+static inline void insw(int port, void *addr, int cnt)
 {
-	uint16_t data;
-	asm volatile("inw %w1,%0" : "=a" (data) : "d" (port));
-	return data;
+    asm volatile("cld\n\trepne\n\tinsw"
+                 : "=D"(addr), "=c"(cnt)
+                 : "d"(port), "0"(addr), "1"(cnt)
+                 : "memory", "cc");
 }
 
-static inline void
-insw(int port, void *addr, int cnt)
+static inline uint32_t inl(int port)
 {
-	asm volatile("cld\n\trepne\n\tinsw"
-		     : "=D" (addr), "=c" (cnt)
-		     : "d" (port), "0" (addr), "1" (cnt)
-		     : "memory", "cc");
+    uint32_t data;
+    asm volatile("inl %w1,%0" : "=a"(data) : "d"(port));
+    return data;
 }
 
-static inline uint32_t
-inl(int port)
+static inline void insl(int port, void *addr, int cnt)
 {
-	uint32_t data;
-	asm volatile("inl %w1,%0" : "=a" (data) : "d" (port));
-	return data;
+    asm volatile("cld\n\trepne\n\tinsl"
+                 : "=D"(addr), "=c"(cnt)
+                 : "d"(port), "0"(addr), "1"(cnt)
+                 : "memory", "cc");
 }
 
-static inline void
-insl(int port, void *addr, int cnt)
+static inline void outb(int port, uint8_t data)
 {
-	asm volatile("cld\n\trepne\n\tinsl"
-		     : "=D" (addr), "=c" (cnt)
-		     : "d" (port), "0" (addr), "1" (cnt)
-		     : "memory", "cc");
+    asm volatile("outb %0,%w1" : : "a"(data), "d"(port));
 }
 
-static inline void
-outb(int port, uint8_t data)
+static inline void outsb(int port, const void *addr, int cnt)
 {
-	asm volatile("outb %0,%w1" : : "a" (data), "d" (port));
+    asm volatile("cld\n\trepne\n\toutsb"
+                 : "=S"(addr), "=c"(cnt)
+                 : "d"(port), "0"(addr), "1"(cnt)
+                 : "cc");
 }
 
-static inline void
-outsb(int port, const void *addr, int cnt)
+static inline void outw(int port, uint16_t data)
 {
-	asm volatile("cld\n\trepne\n\toutsb"
-		     : "=S" (addr), "=c" (cnt)
-		     : "d" (port), "0" (addr), "1" (cnt)
-		     : "cc");
+    asm volatile("outw %0,%w1" : : "a"(data), "d"(port));
 }
 
-static inline void
-outw(int port, uint16_t data)
+static inline void outsw(int port, const void *addr, int cnt)
 {
-	asm volatile("outw %0,%w1" : : "a" (data), "d" (port));
+    asm volatile("cld\n\trepne\n\toutsw"
+                 : "=S"(addr), "=c"(cnt)
+                 : "d"(port), "0"(addr), "1"(cnt)
+                 : "cc");
 }
 
-static inline void
-outsw(int port, const void *addr, int cnt)
+static inline void outsl(int port, const void *addr, int cnt)
 {
-	asm volatile("cld\n\trepne\n\toutsw"
-		     : "=S" (addr), "=c" (cnt)
-		     : "d" (port), "0" (addr), "1" (cnt)
-		     : "cc");
+    asm volatile("cld\n\trepne\n\toutsl"
+                 : "=S"(addr), "=c"(cnt)
+                 : "d"(port), "0"(addr), "1"(cnt)
+                 : "cc");
 }
 
-static inline void
-outsl(int port, const void *addr, int cnt)
+static inline void outl(int port, uint32_t data)
 {
-	asm volatile("cld\n\trepne\n\toutsl"
-		     : "=S" (addr), "=c" (cnt)
-		     : "d" (port), "0" (addr), "1" (cnt)
-		     : "cc");
+    asm volatile("outl %0,%w1" : : "a"(data), "d"(port));
 }
 
-static inline void
-outl(int port, uint32_t data)
+static inline void invlpg(void *addr)
 {
-	asm volatile("outl %0,%w1" : : "a" (data), "d" (port));
+    asm volatile("invlpg (%0)" : : "r"(addr) : "memory");
 }
 
-static inline void
-invlpg(void *addr)
+static inline void lidt(void *p) { asm volatile("lidt (%0)" : : "r"(p)); }
+
+static inline void lgdt(void *p) { asm volatile("lgdt (%0)" : : "r"(p)); }
+
+static inline void lldt(uint16_t sel) { asm volatile("lldt %0" : : "r"(sel)); }
+
+static inline void ltr(uint16_t sel) { asm volatile("ltr %0" : : "r"(sel)); }
+
+static inline void lcr0(uint32_t val)
 {
-	asm volatile("invlpg (%0)" : : "r" (addr) : "memory");
+    asm volatile("movl %0,%%cr0" : : "r"(val));
 }
 
-static inline void
-lidt(void *p)
+static inline uint32_t rcr0(void)
 {
-	asm volatile("lidt (%0)" : : "r" (p));
+    uint32_t val;
+    asm volatile("movl %%cr0,%0" : "=r"(val));
+    return val;
 }
 
-static inline void
-lgdt(void *p)
+static inline uint32_t rcr2(void)
 {
-	asm volatile("lgdt (%0)" : : "r" (p));
+    uint32_t val;
+    asm volatile("movl %%cr2,%0" : "=r"(val));
+    return val;
 }
 
-static inline void
-lldt(uint16_t sel)
+static inline void lcr3(uint32_t val)
 {
-	asm volatile("lldt %0" : : "r" (sel));
+    asm volatile("movl %0,%%cr3" : : "r"(val));
 }
 
-static inline void
-ltr(uint16_t sel)
+static inline uint32_t rcr3(void)
 {
-	asm volatile("ltr %0" : : "r" (sel));
+    uint32_t val;
+    asm volatile("movl %%cr3,%0" : "=r"(val));
+    return val;
 }
 
-static inline void
-lcr0(uint32_t val)
+static inline void lcr4(uint32_t val)
 {
-	asm volatile("movl %0,%%cr0" : : "r" (val));
+    asm volatile("movl %0,%%cr4" : : "r"(val));
 }
 
-static inline uint32_t
-rcr0(void)
+static inline uint32_t rcr4(void)
 {
-	uint32_t val;
-	asm volatile("movl %%cr0,%0" : "=r" (val));
-	return val;
+    uint32_t cr4;
+    asm volatile("movl %%cr4,%0" : "=r"(cr4));
+    return cr4;
 }
 
-static inline uint32_t
-rcr2(void)
+static inline void tlbflush(void)
 {
-	uint32_t val;
-	asm volatile("movl %%cr2,%0" : "=r" (val));
-	return val;
+    uint32_t cr3;
+    asm volatile("movl %%cr3,%0" : "=r"(cr3));
+    asm volatile("movl %0,%%cr3" : : "r"(cr3));
 }
 
-static inline void
-lcr3(uint32_t val)
+static inline uint32_t read_eflags(void)
 {
-	asm volatile("movl %0,%%cr3" : : "r" (val));
+    uint32_t eflags;
+    asm volatile("pushfl; popl %0" : "=r"(eflags));
+    return eflags;
 }
 
-static inline uint32_t
-rcr3(void)
+static inline void write_eflags(uint32_t eflags)
 {
-	uint32_t val;
-	asm volatile("movl %%cr3,%0" : "=r" (val));
-	return val;
+    asm volatile("pushl %0; popfl" : : "r"(eflags));
 }
 
-static inline void
-lcr4(uint32_t val)
+static inline uint32_t read_ebp(void)
 {
-	asm volatile("movl %0,%%cr4" : : "r" (val));
+    uint32_t ebp;
+    asm volatile("movl %%ebp,%0" : "=r"(ebp));
+    return ebp;
 }
 
-static inline uint32_t
-rcr4(void)
+static inline uint32_t read_esp(void)
 {
-	uint32_t cr4;
-	asm volatile("movl %%cr4,%0" : "=r" (cr4));
-	return cr4;
+    uint32_t esp;
+    asm volatile("movl %%esp,%0" : "=r"(esp));
+    return esp;
 }
 
-static inline void
-tlbflush(void)
+static inline void cpuid(uint32_t info, uint32_t *eaxp, uint32_t *ebxp,
+                         uint32_t *ecxp, uint32_t *edxp)
 {
-	uint32_t cr3;
-	asm volatile("movl %%cr3,%0" : "=r" (cr3));
-	asm volatile("movl %0,%%cr3" : : "r" (cr3));
+    uint32_t eax, ebx, ecx, edx;
+    asm volatile("cpuid"
+                 : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
+                 : "a"(info));
+    if (eaxp)
+        *eaxp = eax;
+    if (ebxp)
+        *ebxp = ebx;
+    if (ecxp)
+        *ecxp = ecx;
+    if (edxp)
+        *edxp = edx;
 }
 
-static inline uint32_t
-read_eflags(void)
+static inline uint64_t read_tsc(void)
 {
-	uint32_t eflags;
-	asm volatile("pushfl; popl %0" : "=r" (eflags));
-	return eflags;
+    uint64_t tsc;
+    asm volatile("rdtsc" : "=A"(tsc));
+    return tsc;
 }
 
-static inline void
-write_eflags(uint32_t eflags)
+static inline uint32_t xchg(volatile uint32_t *addr, uint32_t newval)
 {
-	asm volatile("pushl %0; popfl" : : "r" (eflags));
-}
+    uint32_t result;
 
-static inline uint32_t
-read_ebp(void)
-{
-	uint32_t ebp;
-	asm volatile("movl %%ebp,%0" : "=r" (ebp));
-	return ebp;
-}
-
-static inline uint32_t
-read_esp(void)
-{
-	uint32_t esp;
-	asm volatile("movl %%esp,%0" : "=r" (esp));
-	return esp;
-}
-
-static inline void
-cpuid(uint32_t info, uint32_t *eaxp, uint32_t *ebxp, uint32_t *ecxp, uint32_t *edxp)
-{
-	uint32_t eax, ebx, ecx, edx;
-	asm volatile("cpuid"
-		     : "=a" (eax), "=b" (ebx), "=c" (ecx), "=d" (edx)
-		     : "a" (info));
-	if (eaxp)
-		*eaxp = eax;
-	if (ebxp)
-		*ebxp = ebx;
-	if (ecxp)
-		*ecxp = ecx;
-	if (edxp)
-		*edxp = edx;
-}
-
-static inline uint64_t
-read_tsc(void)
-{
-	uint64_t tsc;
-	asm volatile("rdtsc" : "=A" (tsc));
-	return tsc;
-}
-
-static inline uint32_t
-xchg(volatile uint32_t *addr, uint32_t newval)
-{
-	uint32_t result;
-
-	// The + in "+m" denotes a read-modify-write operand.
-	asm volatile("lock; xchgl %0, %1"
-		     : "+m" (*addr), "=a" (result)
-		     : "1" (newval)
-		     : "cc");
-	return result;
+    // The + in "+m" denotes a read-modify-write operand.
+    asm volatile("lock; xchgl %0, %1"
+                 : "+m"(*addr), "=a"(result)
+                 : "1"(newval)
+                 : "cc");
+    return result;
 }
 
 #endif /* !JOS_INC_X86_H */
