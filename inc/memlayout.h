@@ -12,11 +12,11 @@
  */
 
 // Global descriptor numbers
-#define GD_KT 0x08    // kernel text
-#define GD_KD 0x10    // kernel data
-#define GD_UT 0x18    // user text
-#define GD_UD 0x20    // user data
-#define GD_TSS0 0x28  // Task segment selector for CPU 0
+#define GD_KT 0x08 // kernel text
+#define GD_KD 0x10 // kernel data
+#define GD_UT 0x18 // user text
+#define GD_UD 0x20 // user data
+#define GD_TSS0 0x28 // Task segment selector for CPU 0
 
 /*
  * Virtual memory map:                                Permissions
@@ -93,8 +93,8 @@
 
 // Kernel stack.
 #define KSTACKTOP KERNBASE
-#define KSTKSIZE (8 * PGSIZE)  // size of a kernel stack
-#define KSTKGAP (8 * PGSIZE)   // size of a kernel stack guard
+#define KSTKSIZE (8 * PGSIZE) // size of a kernel stack
+#define KSTKGAP (8 * PGSIZE) // size of a kernel stack guard
 
 // Memory-mapped IO.
 #define MMIOLIM (KSTACKTOP - PTSIZE)
@@ -130,7 +130,7 @@
 #define UTEXT (2 * PTSIZE)
 
 // Used for temporary page mappings.  Typed 'void*' for convenience
-#define UTEMP ((void*)PTSIZE)
+#define UTEMP ((void *)PTSIZE)
 // Used for temporary page mappings for the user page-fault handler
 // (should not conflict with other temporary page mappings)
 #define PFTEMP (UTEMP + PTSIZE - PGSIZE)
@@ -157,8 +157,8 @@ typedef uint32_t pde_t;
  * will always be available at virtual address (UVPT + (UVPT >> PGSHIFT)), to
  * which uvpd is set in lib/entry.S.
  */
-extern volatile pte_t uvpt[];     // VA of "virtual page table"
-extern volatile pde_t uvpd[];     // VA of current page directory
+extern volatile pte_t uvpt[]; // VA of "virtual page table"
+extern volatile pde_t uvpd[]; // VA of current page directory
 #endif
 
 /*
