@@ -47,6 +47,7 @@ flags = [
     '-nostdinc',
     '-std=gnu99',
     '-fno-builtin',
+    '-Wno-switch-bool',
 ]
 
 

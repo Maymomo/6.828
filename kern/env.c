@@ -184,7 +184,9 @@ static int env_setup_vm(struct Env *e)
 	//    - The functions in kern/pmap.h are handy.
 
 	// LAB 3: Your code here.
-
+	e->env_pgdir = (pde_t *)page2kva(p);
+	memcpy(e->env_pgdir, kern_pgdir, PGSIZE);
+	p->pp_ref++;
 	// UVPT maps the env's own page table read-only.
 	// Permissions: kernel R, user R
 	e->env_pgdir[PDX(UVPT)] = PADDR(e->env_pgdir) | PTE_P | PTE_U;
@@ -271,6 +273,17 @@ static void region_alloc(struct Env *e, void *va, size_t len)
 	//   'va' and 'len' values that are not page-aligned.
 	//   You should round va down, and round (va + len) up.
 	//   (Watch out for corner-cases!)
+	if ((USTACKTOP - PGSIZE - (uintptr_t)va) < len) {
+		panic("region_alloc, out of range, va : %p, len: %x\n", va,
+		      len);
+	}
+	uintptr_t va_start = (uintptr_t)ROUNDDOWN(va, PGSIZE);
+	uintptr_t va_end = (uintptr_t)ROUNDUP(va + len, PGSIZE);
+	for (; va_start < va_end; va_start += PGSIZE) {
+		struct PageInfo *page = page_alloc(ALLOC_ZERO);
+		page_insert(e->env_pgdir, page, (void *)(va_start),
+			    PTE_P | PTE_U | PTE_W);
+	}
 }
 
 //
@@ -295,6 +308,8 @@ static void region_alloc(struct Env *e, void *va, size_t len)
 // load_icode panics if it encounters problems.
 //  - How might load_icode fail?  What might be wrong with the given input?
 //
+//
+
 static void load_icode(struct Env *e, uint8_t *binary)
 {
 	// Hints:
@@ -327,10 +342,37 @@ static void load_icode(struct Env *e, uint8_t *binary)
 
 	// LAB 3: Your code here.
 
+	struct Elf *elf = (struct Elf *)(binary);
+
+	if (elf->e_magic != ELF_MAGIC) {
+		panic("ELF format error, %x\n", elf->e_magic);
+	}
+
+	lcr3(PADDR(e->env_pgdir));
+
+	struct Proghdr *ph = NULL;
+	struct Proghdr *eph = NULL;
+	for (ph = (struct Proghdr *)(binary + elf->e_phoff),
+	    eph = ph + elf->e_phnum;
+	     ph < eph; ph++) {
+		if (ph->p_type != ELF_PROG_LOAD) {
+			continue;
+		}
+		region_alloc(e, (void *)ph->p_va, ph->p_memsz);
+		memcpy((void *)ph->p_va, binary + ph->p_offset, ph->p_filesz);
+	}
+
 	// Now map one page for the program's initial stack
 	// at virtual address USTACKTOP - PGSIZE.
 
+	struct PageInfo *p = page_alloc(ALLOC_ZERO);
+	page_insert(e->env_pgdir, p, (void *)(USTACKTOP - PGSIZE),
+		    PTE_P | PTE_W | PTE_U);
+
 	// LAB 3: Your code here.
+	e->env_tf.tf_eip = elf->e_entry;
+
+	lcr3(PADDR(kern_pgdir));
 }
 
 //
@@ -343,6 +385,13 @@ static void load_icode(struct Env *e, uint8_t *binary)
 void env_create(uint8_t *binary, enum EnvType type)
 {
 	// LAB 3: Your code here.
+	struct Env *e = NULL;
+	int ret = env_alloc(&e, 0);
+	if (ret != 0) {
+		panic("env_create, env_alloc error: %d\n", ret);
+	}
+	e->env_type = type;
+	load_icode(e, binary);
 }
 
 //
@@ -457,6 +506,15 @@ void env_run(struct Env *e)
 
 	// LAB 3: Your code here.
 
-	panic("env_run not yet implemented");
+	if (curenv != NULL) {
+		if (curenv->env_status == ENV_RUNNING) {
+			curenv->env_status = ENV_RUNNABLE;
+		}
+	}
+	curenv = e;
+	curenv->env_runs++;
+	curenv->env_status = ENV_RUNNING;
+	lcr3(PADDR(curenv->env_pgdir));
+	env_pop_tf(&curenv->env_tf);
 }
 
