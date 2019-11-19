@@ -111,7 +111,19 @@ void env_init(void)
 {
 	// Set up envs array
 	// LAB 3: Your code here.
-
+	env_free_list = NULL;
+	// fuck size_t 0-0xffffffff
+	for (size_t i = NENV; i > 0; i--) {
+		struct Env *env = &envs[i - 1];
+		env->env_id = 0;
+		env->env_link = env_free_list;
+		env->env_parent_id = 0;
+		env->env_pgdir = NULL;
+		env->env_runs = 0;
+		env->env_status = ENV_FREE;
+		env->env_type = ENV_TYPE_USER;
+		env_free_list = env;
+	}
 	// Per-CPU part of the initialization
 	env_init_percpu();
 }
