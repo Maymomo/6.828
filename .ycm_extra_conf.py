@@ -46,6 +46,7 @@ flags = [
     '-m32',
     '-nostdinc',
     '-std=gnu99',
+    '-fno-builtin',
 ]
 
 
