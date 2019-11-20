@@ -1,0 +1,11 @@
+GENERATE_CXX = g++
+GENERATE_CXXFLAGS = -std=c++17
+
+$(OBJDIR)/generate/generate_trap: generate/generate_trap.cc
+	@mkdir -p $(@D)
+	@$(GENERATE_CXX) $(GENERATE_CXXFLAGS) $^ -o $@
+
+kern/trap_generate.S: $(OBJDIR)/generate/generate_trap
+	@echo + generate $@
+	@./$< > $@
+

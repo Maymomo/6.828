@@ -137,6 +137,7 @@ $(OBJDIR)/.vars.%: FORCE
 
 # Include Makefrags for subdirectories
 include boot/Makefrag
+include generate/Makefrag
 include kern/Makefrag
 include lib/Makefrag
 include user/Makefrag

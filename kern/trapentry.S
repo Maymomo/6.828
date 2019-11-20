@@ -34,14 +34,16 @@
  */
 #define TRAPHANDLER_NOEC(name, num)					\
 	.globl name;							\
-	.type name, @function;						\
+	.type name, @function;					\
 	.align 2;							\
 	name:								\
 	pushl $0;							\
 	pushl $(num);							\
 	jmp _alltraps
 
+
 .text
+
 
 /*
  * Lab 3: Your code here for generating entry points for the different traps.
@@ -53,3 +55,10 @@
  * Lab 3: Your code here for _alltraps
  */
 
+
+_alltraps:
+    pushl %ds
+    pushl %es
+    pushal
+    pushl %esp
+    call  trap
