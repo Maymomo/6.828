@@ -89,7 +89,7 @@ $(OBJDIR)/kern/trap_generate.o : kern/trap_generate.S $(OBJDIR)/.vars.KERN_CFLAG
 $(OBJDIR)/kern/kernel: $(KERN_OBJFILES) $(KERN_BINFILES) $(KERN_GENERATE_OBJFILES) kern/kernel.ld \
 	  $(OBJDIR)/.vars.KERN_LDFLAGS
 	@echo + ld $@
-	$(V)$(LD) -o $@ $(KERN_LDFLAGS) $(KERN_OBJFILES) $(KENR_GENERATE_OBJFILES) $(GCC_LIB) -b binary $(KERN_BINFILES)
+	$(V)$(LD) -o $@ $(KERN_LDFLAGS) $(KERN_OBJFILES) $(KERN_GENERATE_OBJFILES) $(GCC_LIB) -b binary $(KERN_BINFILES)
 	$(V)$(OBJDUMP) -S $@ > $@.asm
 	$(V)$(NM) -n $@ > $@.sym
 

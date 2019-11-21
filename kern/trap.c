@@ -59,6 +59,10 @@ void trap_init(void)
 {
 	extern struct Segdesc gdt[];
 
+	for (size_t i = 0; i < 255; i++) {
+		cprintf("%p\n", trap_handlers[i]);
+	}
+
 	// LAB 3: Your code here.
 
 	// Per-CPU setup
