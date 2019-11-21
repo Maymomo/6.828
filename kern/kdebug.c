@@ -128,7 +128,6 @@ int debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
 		stabstr_end = __STABSTR_END__;
 	} else {
 		// Can't search for user-level addresses yet!
-		panic("User address");
 		// The user-application linker script, user/user.ld,
 		// puts information about the application's stabs (equivalent
 		// to __STAB_BEGIN__, __STAB_END__, __STABSTR_BEGIN__, and
@@ -140,7 +139,13 @@ int debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
 		// Make sure this memory is valid.
 		// Return -1 if it is not.  Hint: Call user_mem_check.
 		// LAB 3: Your code here.
-
+		int check_ret = 0;
+		check_ret =
+			user_mem_check(curenv, usd, sizeof(struct UserStabData),
+				       PTE_U | PTE_P);
+		if (check_ret != 0) {
+			return -1;
+		}
 		stabs = usd->stabs;
 		stab_end = usd->stab_end;
 		stabstr = usd->stabstr;
@@ -148,6 +153,12 @@ int debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
 
 		// Make sure the STABS and string table memory is valid.
 		// LAB 3: Your code here.
+		if (user_mem_check(curenv, stabs, stab_end - stabs + 1,
+				   PTE_P | PTE_U) != 0 ||
+		    user_mem_check(curenv, stabstr, stabstr_end - stabstr + 1,
+				   PTE_P | PTE_U) != 0) {
+			return -1;
+		}
 	}
 
 	// String table validity checks

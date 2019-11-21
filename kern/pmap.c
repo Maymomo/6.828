@@ -584,8 +584,35 @@ static uintptr_t user_mem_check_addr;
 int user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 {
 	// LAB 3: Your code here.
-
-	return 0;
+	int ret = 0;
+	len = (size_t)ROUNDUP((void *)len, PGSIZE);
+	if (0xffffffff - (size_t)va < len) {
+		ret = -E_FAULT;
+		return ret;
+	}
+	size_t va_start = (size_t)(va);
+	size_t va_end = (size_t)ROUNDUP(
+		(size_t)ROUNDDOWN(va_start, PGSIZE) + len, PGSIZE);
+	for (; va_start < va_end; va_start += PGSIZE) {
+		pte_t *pte = NULL;
+		page_lookup(env->env_pgdir, (void *)va_start, &pte);
+		if (pte == NULL) {
+			cprintf("env: %p, va_start: %x page not found\n", env,
+				va_start);
+			user_mem_check_addr = va_start;
+			ret = -E_FAULT;
+			break;
+		}
+		if ((*pte & perm) != perm) {
+			cprintf("env: %p, va_start: %x page perm error, pte: %x\n",
+				env, va_start, *pte);
+			user_mem_check_addr = va_start;
+			ret = -E_FAULT;
+			break;
+		}
+		va_start = ROUNDDOWN(va_start, PGSIZE);
+	}
+	return ret;
 }
 
 //

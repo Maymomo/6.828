@@ -1,6 +1,7 @@
 #include <inc/mmu.h>
 #include <inc/x86.h>
 #include <inc/assert.h>
+#include <inc/error.h>
 
 #include <kern/pmap.h>
 #include <kern/trap.h>
@@ -55,16 +56,36 @@ static const char *trapname(int trapno)
 	return "(unknown trap)";
 }
 
+bool is_interrupt(int num)
+{
+	return (num == 2 || (num >= 32 && num <= 255));
+}
+
+bool is_dpl_3(int num)
+{
+	return (num == 3);
+}
+
 void trap_init(void)
 {
 	extern struct Segdesc gdt[];
 
-	for (size_t i = 0; i < 255; i++) {
-		cprintf("%p\n", trap_handlers[i]);
+	// LAB 3: Your code here.
+	/*
+	 * trap 1, 3, 4
+	 * interrupt 2, 32-255
+	 * abort 8, 18
+	 * other 0-20 are fault
+	 */
+	for (int i = 0; i <= 20; i++) {
+		int is_trap = is_interrupt(i) ? 0 : 1;
+		int dpl = is_dpl_3(i) ? 3 : 0;
+
+		//#define SETGATE(gate, istrap, sel, off, dpl)
+		SETGATE(idt[i], is_trap, GD_KT, trap_handlers[i], dpl);
 	}
 
-	// LAB 3: Your code here.
-
+	SETGATE(idt[T_SYSCALL], 0, GD_KT, trap_handlers[T_SYSCALL], 3);
 	// Per-CPU setup
 	trap_init_percpu();
 }
@@ -138,7 +159,18 @@ static void trap_dispatch(struct Trapframe *tf)
 {
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
-
+	switch (tf->tf_trapno) {
+	case T_PGFLT:
+		page_fault_handler(tf);
+		return;
+	case T_BRKPT:
+		break_point_handler(tf);
+		return;
+	case T_SYSCALL: {
+		syscall_handler(tf);
+		return;
+	}
+	}
 	// Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);
 	if (tf->tf_cs == GD_KT)
@@ -197,6 +229,12 @@ void page_fault_handler(struct Trapframe *tf)
 
 	// LAB 3: Your code here.
 
+	if ((tf->tf_cs & 3) == 0) {
+		print_trapframe(tf);
+		panic("[%08x] user fault va %08x ip %08x\n", curenv->env_id,
+		      fault_va, tf->tf_eip);
+	}
+
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.
 
@@ -207,3 +245,17 @@ void page_fault_handler(struct Trapframe *tf)
 	env_destroy(curenv);
 }
 
+void break_point_handler(struct Trapframe *tf)
+{
+	monitor(tf);
+}
+
+void syscall_handler(struct Trapframe *tf)
+{
+	int ret = 0;
+	//%edx, %ecx, %ebx, %edi, and %esi
+	ret = syscall(tf->tf_regs.reg_eax, tf->tf_regs.reg_edx,
+		      tf->tf_regs.reg_ecx, tf->tf_regs.reg_ebx,
+		      tf->tf_regs.reg_edi, tf->tf_regs.reg_esi);
+	tf->tf_regs.reg_eax = ret;
+}
