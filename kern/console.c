@@ -552,7 +552,7 @@ static void kbd_init(void)
 {
 	// Drain the kbd buffer so that QEMU generates interrupts.
 	kbd_intr();
-	irq_setmask_8259A(irq_mask_8259A & ~(1<<IRQ_KBD));
+	irq_setmask_8259A(irq_mask_8259A & ~(1 << IRQ_KBD));
 }
 
 /***** General device-independent console code *****/

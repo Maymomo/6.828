@@ -8,8 +8,7 @@
 void sched_halt(void);
 
 // Choose a user environment to run and run it.
-void
-sched_yield(void)
+void sched_yield(void)
 {
 	struct Env *idle;
 
@@ -37,8 +36,7 @@ sched_yield(void)
 // Halt this CPU when there is nothing to do. Wait until the
 // timer interrupt wakes it up. This function never returns.
 //
-void
-sched_halt(void)
+void sched_halt(void)
 {
 	int i;
 
@@ -69,7 +67,7 @@ sched_halt(void)
 	unlock_kernel();
 
 	// Reset stack pointer, enable interrupts and then halt.
-	asm volatile (
+	asm volatile(
 		"movl $0, %%ebp\n"
 		"movl %0, %%esp\n"
 		"pushl $0\n"
@@ -79,6 +77,7 @@ sched_halt(void)
 		"1:\n"
 		"hlt\n"
 		"jmp 1b\n"
-	: : "a" (thiscpu->cpu_ts.ts_esp0));
+		:
+		: "a"(thiscpu->cpu_ts.ts_esp0));
 }
 

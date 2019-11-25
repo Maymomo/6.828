@@ -60,8 +60,7 @@ static int sys_env_destroy(envid_t envid)
 }
 
 // Deschedule current environment and pick a different one to run.
-static void
-sys_yield(void)
+static void sys_yield(void)
 {
 	sched_yield();
 }
@@ -70,8 +69,7 @@ sys_yield(void)
 // Returns envid of new environment, or < 0 on error.  Errors are:
 //	-E_NO_FREE_ENV if no free environment is available.
 //	-E_NO_MEM on memory exhaustion.
-static envid_t
-sys_exofork(void)
+static envid_t sys_exofork(void)
 {
 	// Create the new environment with env_alloc(), from kern/env.c.
 	// It should be left as env_alloc created it, except that
@@ -90,8 +88,7 @@ sys_exofork(void)
 //	-E_BAD_ENV if environment envid doesn't currently exist,
 //		or the caller doesn't have permission to change envid.
 //	-E_INVAL if status is not a valid status for an environment.
-static int
-sys_env_set_status(envid_t envid, int status)
+static int sys_env_set_status(envid_t envid, int status)
 {
 	// Hint: Use the 'envid2env' function from kern/env.c to translate an
 	// envid to a struct Env.
@@ -111,8 +108,7 @@ sys_env_set_status(envid_t envid, int status)
 // Returns 0 on success, < 0 on error.  Errors are:
 //	-E_BAD_ENV if environment envid doesn't currently exist,
 //		or the caller doesn't have permission to change envid.
-static int
-sys_env_set_pgfault_upcall(envid_t envid, void *func)
+static int sys_env_set_pgfault_upcall(envid_t envid, void *func)
 {
 	// LAB 4: Your code here.
 	panic("sys_env_set_pgfault_upcall not implemented");
@@ -134,8 +130,7 @@ sys_env_set_pgfault_upcall(envid_t envid, void *func)
 //	-E_INVAL if perm is inappropriate (see above).
 //	-E_NO_MEM if there's no memory to allocate the new page,
 //		or to allocate any necessary page tables.
-static int
-sys_page_alloc(envid_t envid, void *va, int perm)
+static int sys_page_alloc(envid_t envid, void *va, int perm)
 {
 	// Hint: This function is a wrapper around page_alloc() and
 	//   page_insert() from kern/pmap.c.
@@ -164,9 +159,8 @@ sys_page_alloc(envid_t envid, void *va, int perm)
 //	-E_INVAL if (perm & PTE_W), but srcva is read-only in srcenvid's
 //		address space.
 //	-E_NO_MEM if there's no memory to allocate any necessary page tables.
-static int
-sys_page_map(envid_t srcenvid, void *srcva,
-	     envid_t dstenvid, void *dstva, int perm)
+static int sys_page_map(envid_t srcenvid, void *srcva, envid_t dstenvid,
+			void *dstva, int perm)
 {
 	// Hint: This function is a wrapper around page_lookup() and
 	//   page_insert() from kern/pmap.c.
@@ -186,8 +180,7 @@ sys_page_map(envid_t srcenvid, void *srcva,
 //	-E_BAD_ENV if environment envid doesn't currently exist,
 //		or the caller doesn't have permission to change envid.
 //	-E_INVAL if va >= UTOP, or va is not page-aligned.
-static int
-sys_page_unmap(envid_t envid, void *va)
+static int sys_page_unmap(envid_t envid, void *va)
 {
 	// Hint: This function is a wrapper around page_remove().
 
@@ -233,8 +226,8 @@ sys_page_unmap(envid_t envid, void *va)
 //		current environment's address space.
 //	-E_NO_MEM if there's not enough memory to map srcva in envid's
 //		address space.
-static int
-sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
+static int sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva,
+			    unsigned perm)
 {
 	// LAB 4: Your code here.
 	panic("sys_ipc_try_send not implemented");
@@ -251,8 +244,7 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 // return 0 on success.
 // Return < 0 on error.  Errors are:
 //	-E_INVAL if dstva < UTOP but dstva is not page-aligned.
-static int
-sys_ipc_recv(void *dstva)
+static int sys_ipc_recv(void *dstva)
 {
 	// LAB 4: Your code here.
 	panic("sys_ipc_recv not implemented");
