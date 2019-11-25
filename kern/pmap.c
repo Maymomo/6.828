@@ -495,10 +495,6 @@ int page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 	if (ppte == NULL) {
 		return -E_NO_MEM;
 	}
-	// find pde
-	pde_t *pde = &pgdir[PDX(va)];
-	// ok we should update perm
-	*pde = PTE_ADDR(*pde) | perm | PTE_P;
 
 	struct PageInfo *page = NULL;
 	// check ppte is PTE_P
@@ -512,6 +508,11 @@ int page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 	if (pp != page) {
 		pp->pp_ref++;
 	}
+	// find pde
+	pde_t *pde = &pgdir[PDX(va)];
+	// ok we should update perm
+	*pde = PTE_ADDR(*pde) | perm | PTE_P;
+	cprintf("insert pde: %p, p: %d, va: %p\n", pde, *pde & PTE_P, va);
 	// update ppte
 	*ppte = page2pa(pp) | perm | PTE_P;
 	// update tlb
@@ -533,6 +534,7 @@ int page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 struct PageInfo *page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 {
 	pde_t *pde = &pgdir[PDX(va)];
+	cprintf("lookup pde: %p, p: %d, va: %p\n", pde, *pde & PTE_P, va);
 	if (!(*pde & PTE_P)) {
 		return NULL;
 	}
