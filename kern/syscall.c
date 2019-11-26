@@ -85,6 +85,7 @@ static envid_t sys_exofork(void)
 	env->env_status = ENV_NOT_RUNNABLE;
 	env->env_tf = curenv->env_tf;
 	env->env_tf.tf_regs.reg_eax = 0;
+	env->env_pgfault_upcall = curenv->env_pgfault_upcall;
 	return env->env_id;
 }
 
@@ -125,7 +126,15 @@ static int sys_env_set_status(envid_t envid, int status)
 static int sys_env_set_pgfault_upcall(envid_t envid, void *func)
 {
 	// LAB 4: Your code here.
-	panic("sys_env_set_pgfault_upcall not implemented");
+	int ret = 0;
+	struct Env *env = NULL;
+	ret = envid2env(envid, &env, true);
+	if (ret != 0) {
+		return ret;
+	}
+	user_mem_assert(env, func, PGSIZE, PTE_P | PTE_U);
+	env->env_pgfault_upcall = func;
+	return 0;
 }
 
 // Allocate a page of memory and map it at 'va' with permission
@@ -174,6 +183,7 @@ static int sys_page_alloc(envid_t envid, void *va, int perm)
 	if (page == NULL) {
 		return -E_NO_MEM;
 	}
+
 
 	ret = page_insert(env->env_pgdir, page, va, perm);
 
@@ -378,7 +388,10 @@ int32_t syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3,
 	case SYS_env_set_status:
 		ret = sys_env_set_status((envid_t)(a1), (int)(a2));
 		break;
+	case SYS_env_set_pgfault_upcall:
+		ret = sys_env_set_pgfault_upcall((envid_t)(a1), (void *)(a2));
 	default:
+		break;
 		return -E_INVAL;
 	}
 	return ret;

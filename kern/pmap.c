@@ -417,7 +417,7 @@ pte_t *pgdir_walk(pde_t *pgdir, const void *va, int create)
 			return NULL;
 		}
 		page->pp_ref++;
-		*pde = page2pa(page);
+		*pde = page2pa(page) | PTE_W | PTE_P;
 	}
 	pte_t *pte = (pte_t *)KADDR(PTE_ADDR(*pde));
 	return &pte[PTX(va)];
@@ -508,12 +508,15 @@ int page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 	if (pp != page) {
 		pp->pp_ref++;
 	}
+	// update ppte
+	*ppte = page2pa(pp) | perm | PTE_P;
 	// find pde
 	pde_t *pde = &pgdir[PDX(va)];
 	// ok we should update perm
-	*pde = PTE_ADDR(*pde) | perm | PTE_P;
-	// update ppte
-	*ppte = page2pa(pp) | perm | PTE_P;
+	if (perm & PTE_U) {
+		perm = PTE_U;
+	}
+	*pde = *pde | perm | PTE_P;
 	// update tlb
 	tlb_invalidate(pgdir, va);
 	return 0;

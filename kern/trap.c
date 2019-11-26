@@ -248,6 +248,8 @@ void trap(struct Trapframe *tf)
 	// the interrupt path.
 	assert(!(read_eflags() & FL_IF));
 
+	//cprintf("Incoming TRAP frame at %p\n", tf);
+
 	if ((tf->tf_cs & 3) == 3) {
 		// Trapped from user mode.
 		// Acquire the big kernel lock before doing any
@@ -346,7 +348,29 @@ void page_fault_handler(struct Trapframe *tf)
 	cprintf("[%08x] user fault va %08x ip %08x\n", curenv->env_id, fault_va,
 		tf->tf_eip);
 	print_trapframe(tf);
-	env_destroy(curenv);
+	user_mem_assert(curenv, (void *)curenv->env_pgfault_upcall, PGSIZE,
+			PTE_U | PTE_P);
+
+	user_mem_assert(curenv, (void *)(UXSTACKTOP - PGSIZE), PGSIZE,
+			PTE_U | PTE_U | PTE_W);
+
+	struct UTrapframe *fm = NULL;
+
+	if ((tf->tf_esp > (UXSTACKTOP - PGSIZE)) && (tf->tf_esp < UXSTACKTOP)) {
+		fm = (struct UTrapframe *)(tf->tf_esp - 0x4 -
+					   sizeof(struct UTrapframe));
+	} else {
+		fm = (struct UTrapframe *)(UXSTACKTOP -
+					   sizeof(struct UTrapframe));
+	}
+	fm->utf_eflags = tf->tf_eflags;
+	fm->utf_eip = tf->tf_eip;
+	fm->utf_err = tf->tf_err;
+	fm->utf_esp = tf->tf_esp;
+	fm->utf_fault_va = fault_va;
+	fm->utf_regs = tf->tf_regs;
+	tf->tf_eip = (uint32_t)(curenv->env_pgfault_upcall);
+	tf->tf_esp = (uint32_t)(fm);
 }
 
 void break_point_handler(struct Trapframe *tf)

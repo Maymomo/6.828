@@ -3,6 +3,7 @@
 #include <inc/assert.h>
 #include <inc/stdio.h>
 #include <inc/string.h>
+#include <inc/trap.h>
 
 #include <kern/console.h>
 #include <kern/monitor.h>
@@ -51,6 +52,8 @@ void i386_init(void)
 
 	// Lab 4 multitasking initialization functions
 	pic_init();
+
+	cprintf("sizeof: %x\n", sizeof(struct UTrapframe));
 
 	// Acquire the big kernel lock before waking up APs
 	// Your code here:
