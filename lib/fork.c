@@ -135,6 +135,8 @@ envid_t fork(void)
 		      thisenv->env_id, ret);
 	}
 
+	cprintf("mark child: %x\n", child);
+
 	ret = sys_env_set_status(child, ENV_RUNNABLE);
 
 	if (ret != 0) {

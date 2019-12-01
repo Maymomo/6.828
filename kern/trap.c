@@ -62,9 +62,9 @@ static const char *trapname(int trapno)
 	return "(unknown trap)";
 }
 
-bool is_interrupt(int num)
+bool idt_is_trap(int num)
 {
-	return (num == 2 || (num >= 32 && num <= 255));
+	return (num != 2 && (num <= 32 && num >= 0));
 }
 
 bool is_dpl_3(int num)
@@ -84,14 +84,18 @@ void trap_init(void)
 	 * other 0-20 are fault
 	 */
 	for (int i = 0; i <= 20; i++) {
-		int is_trap = is_interrupt(i) ? 0 : 1;
+		int is_trap = idt_is_trap(i) ? 1 : 0;
 		int dpl = is_dpl_3(i) ? 3 : 0;
 
 		//#define SETGATE(gate, istrap, sel, off, dpl)
-		SETGATE(idt[i], is_trap, GD_KT, trap_handlers[i], dpl);
+		SETGATE(idt[i], 0, GD_KT, trap_handlers[i], dpl);
 	}
 
 	SETGATE(idt[T_SYSCALL], 0, GD_KT, trap_handlers[T_SYSCALL], 3);
+	for (int i = 0; i <= 15; i++) {
+		SETGATE(idt[IRQ_OFFSET + i], 0, GD_KT,
+			trap_handlers[IRQ_OFFSET + i], 0);
+	}
 	// Per-CPU setup
 	trap_init_percpu();
 }
@@ -129,7 +133,7 @@ void trap_init_percpu(void)
 	struct Taskstate *ts = &thiscpu->cpu_ts;
 	ts->ts_esp0 = KSTACKTOP - cpunum() * (KSTKSIZE + KSTKGAP);
 	ts->ts_ss0 = GD_KD;
-	ts->ts_iomb = sizeof(struct Taskstate);
+	ts->ts_iomb = 0xffff;
 
 	// Initialize the TSS slot of the gdt.
 	gdt[(GD_TSS0 >> 3) + cpunum()] = SEG16(STS_T32A, (uint32_t)(ts),
@@ -198,10 +202,13 @@ static void trap_dispatch(struct Trapframe *tf)
 	case T_BRKPT:
 		break_point_handler(tf);
 		return;
-	case T_SYSCALL: {
+	case T_SYSCALL:
 		syscall_handler(tf);
 		return;
-	}
+	case IRQ_OFFSET + IRQ_TIMER:
+		lapic_eoi(); // ack irq
+		sched_yield();
+		return;
 	}
 
 	// Handle spurious interrupts
@@ -232,7 +239,6 @@ void trap(struct Trapframe *tf)
 	// The environment may have set DF and some versions
 	// of GCC rely on DF being clear
 	asm volatile("cld" ::: "cc");
-
 
 	// Halt the CPU if some other CPU has called panic()
 	extern char *panicstr;

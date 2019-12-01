@@ -390,9 +390,14 @@ int32_t syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3,
 		break;
 	case SYS_env_set_pgfault_upcall:
 		ret = sys_env_set_pgfault_upcall((envid_t)(a1), (void *)(a2));
-	default:
 		break;
-		return -E_INVAL;
+	case SYS_yield:
+		ret = 0;
+		sys_yield();
+		break;
+	default:
+		ret = -E_INVAL;
+		break;
 	}
 	return ret;
 }
