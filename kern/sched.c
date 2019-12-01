@@ -29,8 +29,13 @@ void sched_yield(void)
 
 	// LAB 4: Your code here.
 	// sched_halt never returns
+	size_t index = 0;
+	if (curenv != NULL) {
+		index = curenv - envs + 1;
+	}
 	for (size_t i = 0; i < NENV; i++) {
-		struct Env *e = &envs[i];
+		struct Env *e = &envs[index % NENV];
+		index++;
 		if (e->env_status == ENV_RUNNABLE) {
 			env_run(e);
 		}
