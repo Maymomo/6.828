@@ -112,7 +112,6 @@ envid_t fork(void)
 
 	set_pgfault_handler(pgfault);
 
-
 	envid_t child = sys_exofork();
 	if (child == 0) {
 		thisenv = &envs[ENVX(sys_getenvid())];
