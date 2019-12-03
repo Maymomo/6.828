@@ -378,6 +378,10 @@ static int sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva,
 		return ret;
 	}
 
+	target_env->env_ipc_perm = 0;
+
+	target_env->env_ipc_value = value;
+
 	if (srcva != NULL) {
 		if (target_env->env_ipc_dstva == NULL) {
 			ret = -E_IPC_NOT_RECV;
@@ -392,11 +396,7 @@ static int sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva,
 		if (ret != 0) {
 			return ret;
 		}
-		target_env->env_ipc_value = 0;
 		target_env->env_ipc_perm = perm;
-	} else {
-		target_env->env_ipc_value = value;
-		target_env->env_ipc_perm = 0;
 	}
 
 	target_env->env_ipc_from = curenv->env_id;
